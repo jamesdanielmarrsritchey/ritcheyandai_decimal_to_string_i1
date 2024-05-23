@@ -1,0 +1,441 @@
+jamesdanielmarrsritchey: Using C++, write a program which converts a string to a decimal representation. The string is passed as a commandline argument. Arguments must all have long prefixs. The program should return the decimal representation.
+
+GitHub Copilot: Here is a simple C++ program that converts a string to its decimal representation using command line arguments. The program uses the Boost library to handle command line arguments with long prefixes.
+
+```cpp
+#include <iostream>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+
+int main(int argc, char* argv[]) {
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("input", po::value<std::string>(), "input string to convert");
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("input")) {
+        std::string input = vm["input"].as<std::string>();
+        for (char& c : input) {
+            std::cout << static_cast<int>(c) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "No input string was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+To compile this program, you need to link against the Boost program_options library. Here is an example of how you might do this:
+
+```bash
+g++ -o string_to_decimal string_to_decimal.cpp -lboost_program_options
+```
+
+To run the program, you would use the `--input` option to specify the string to convert:
+
+```bash
+./string_to_decimal --input="Hello"
+```
+
+This will output the decimal representation of each character in the string, separated by spaces.
+
+jamesdanielmarrsritchey: The string argument should be formatted as "--string value".
+
+GitHub Copilot: Sure, I have updated the program to use `--string` as the command line argument.
+
+```cpp
+#include <iostream>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+
+int main(int argc, char* argv[]) {
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("string", po::value<std::string>(), "input string to convert");
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("string")) {
+        std::string input = vm["string"].as<std::string>();
+        for (char& c : input) {
+            std::cout << static_cast<int>(c) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "No input string was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+You can compile and run the program in the same way as before, but use `--string` to specify the string:
+
+```bash
+./string_to_decimal --string="Hello"
+```
+
+jamesdanielmarrsritchey: The string argument should be formatted as "--string value", without an "="
+
+GitHub Copilot: The program I provided earlier already supports the `--string value` format without an equals sign. The equals sign is optional when using the Boost program_options library. You can specify command line arguments either as `--option=value` or `--option value`.
+
+Here's the same program for reference:
+
+```cpp
+#include <iostream>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+
+int main(int argc, char* argv[]) {
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("string", po::value<std::string>(), "input string to convert");
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("string")) {
+        std::string input = vm["string"].as<std::string>();
+        for (char& c : input) {
+            std::cout << static_cast<int>(c) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "No input string was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+You can run the program with the `--string` option followed by a space and the string value:
+
+```bash
+./string_to_decimal --string "Hello"
+```
+
+jamesdanielmarrsritchey: Add an argument that specifies if the return should use spaces between numbers, or commas.
+
+GitHub Copilot: Sure, I can add a `--delimiter` argument that allows the user to specify whether to use spaces or commas between numbers. Here's the updated code:
+
+```cpp
+#include <iostream>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+
+int main(int argc, char* argv[]) {
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("string", po::value<std::string>(), "input string to convert")
+        ("delimiter", po::value<std::string>()->default_value(" "), "delimiter to use between numbers");
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("string")) {
+        std::string input = vm["string"].as<std::string>();
+        std::string delimiter = vm["delimiter"].as<std::string>();
+        for (size_t i = 0; i < input.size(); ++i) {
+            std::cout << static_cast<int>(input[i]);
+            if (i != input.size() - 1) {
+                std::cout << delimiter;
+            }
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "No input string was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+Now you can run the program with the `--string` option to specify the string and the `--delimiter` option to specify the delimiter:
+
+```bash
+./string_to_decimal --string "Hello" --delimiter ","
+```
+
+jamesdanielmarrsritchey: Modify the program to NOT use the boost library.
+
+GitHub Copilot: Sure, here's a version of the program that uses only the standard library. This version uses `getopt` to parse command line options:
+
+```cpp
+#include <iostream>
+#include <unistd.h>
+#include <cstdlib>
+
+int main(int argc, char* argv[]) {
+    std::string input;
+    std::string delimiter = " ";
+    int opt;
+
+    while ((opt = getopt(argc, argv, "s:d:")) != -1) {
+        switch (opt) {
+        case 's':
+            input = optarg;
+            break;
+        case 'd':
+            delimiter = optarg;
+            break;
+        default:
+            std::cerr << "Usage: " << argv[0] << " -s string -d delimiter" << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (input.empty()) {
+        std::cerr << "No input string was given." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    for (size_t i = 0; i < input.size(); ++i) {
+        std::cout << static_cast<int>(input[i]);
+        if (i != input.size() - 1) {
+            std::cout << delimiter;
+        }
+    }
+    std::cout << std::endl;
+
+    return EXIT_SUCCESS;
+}
+```
+
+You can compile and run this program in the same way as before, but the command line options are now specified with a single dash:
+
+```bash
+g++ -o string_to_decimal string_to_decimal.cpp
+./string_to_decimal -s "Hello" -d ","
+```
+
+jamesdanielmarrsritchey: The arguments should be formatted as "--string value", and "--delimiter value".
+
+GitHub Copilot: The standard C++ library does not provide a built-in way to parse command line arguments with long prefixes like `--string` and `--delimiter`. However, we can implement a simple function to do this manually:
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+std::string getCmdOption(char ** begin, char ** end, const std::string & option)
+{
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return std::string(*itr);
+    }
+    return "";
+}
+
+int main(int argc, char* argv[]) {
+    std::vector<std::string> args(argv, argv + argc);
+    std::string input = getCmdOption(argv, argv + argc, "--string");
+    std::string delimiter = getCmdOption(argv, argv + argc, "--delimiter");
+
+    if (delimiter.empty()) {
+        delimiter = " "; // default delimiter is space
+    }
+
+    if (!input.empty()) {
+        for (size_t i = 0; i < input.size(); ++i) {
+            std::cout << static_cast<int>(input[i]);
+            if (i != input.size() - 1) {
+                std::cout << delimiter;
+            }
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "No input string was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+You can compile and run this program in the same way as before:
+
+```bash
+g++ -o string_to_decimal string_to_decimal.cpp
+./string_to_decimal --string "Hello" --delimiter ","
+```
+
+jamesdanielmarrsritchey: This contains a "no matching function for call" error.
+
+GitHub Copilot: The error message "no matching function for call" typically means that you're trying to call a function that doesn't exist or doesn't match the arguments you're providing. In this case, it's because `std::find` is not included in the code. `std::find` is part of the `<algorithm>` library.
+
+Here's the corrected code:
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+std::string getCmdOption(char ** begin, char ** end, const std::string & option)
+{
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return std::string(*itr);
+    }
+    return "";
+}
+
+int main(int argc, char* argv[]) {
+    std::vector<std::string> args(argv, argv + argc);
+    std::string input = getCmdOption(argv, argv + argc, "--string");
+    std::string delimiter = getCmdOption(argv, argv + argc, "--delimiter");
+
+    if (delimiter.empty()) {
+        delimiter = " "; // default delimiter is space
+    }
+
+    if (!input.empty()) {
+        for (size_t i = 0; i < input.size(); ++i) {
+            std::cout << static_cast<int>(input[i]);
+            if (i != input.size() - 1) {
+                std::cout << delimiter;
+            }
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "No input string was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+You can compile and run this program in the same way as before:
+
+```bash
+g++ -o string_to_decimal string_to_decimal.cpp
+./string_to_decimal --string "Hello" --delimiter ","
+```
+
+jamesdanielmarrsritchey: Using C++, create a program which does the opposite (converts a decimal representation back).
+
+jamesdanielmarrsritchey: Using C++, create a program which does the opposite, and converts a decimal representation back to a string. Arguments are passed from the commandline. It needs to have a delimiter argument.
+
+jamesdanielmarrsritchey: Using C++, create a program which converts a decimal representation back to a string. Arguments are passed from the commandline. It needs to have a delimiter argument. Don't use the boost library.
+
+jamesdanielmarrsritchey: Using C++, create a program which converts a decimal representation back to a string. Arguments are passed from the commandline. It needs to have a delimiter argument, and remove that delimiter from the representation. Don't use the boost library.
+
+jamesdanielmarrsritchey: Using C++, write a program which converts a decimal representation back.
+
+GitHub Copilot: Sure, here's a simple C++ program that converts a decimal representation back to a string. This program assumes that the decimal representation is provided as a command line argument with the format `--decimal "72 101 108 108 111"`, where the numbers are separated by spaces.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <sstream>
+
+std::string getCmdOption(char ** begin, char ** end, const std::string & option)
+{
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return std::string(*itr);
+    }
+    return "";
+}
+
+int main(int argc, char* argv[]) {
+    std::vector<std::string> args(argv, argv + argc);
+    std::string decimal = getCmdOption(argv, argv + argc, "--decimal");
+
+    if (!decimal.empty()) {
+        std::istringstream iss(decimal);
+        int number;
+        while (iss >> number) {
+            std::cout << static_cast<char>(number);
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "No decimal representation was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+You can compile and run this program in the same way as before:
+
+```bash
+g++ -o decimal_to_string decimal_to_string.cpp
+./decimal_to_string --decimal "72 101 108 108 111"
+```
+
+This will output the string representation of the decimal numbers, which in this case is "Hello".
+
+jamesdanielmarrsritchey: It needs to have a delimiter argument, and remove that delimiter from the decimal representation. The default delimiter is " ".
+
+GitHub Copilot: Sure, here's the updated program that includes a `--delimiter` argument. This program will remove the specified delimiter from the decimal representation:
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <sstream>
+
+std::string getCmdOption(char ** begin, char ** end, const std::string & option)
+{
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return std::string(*itr);
+    }
+    return "";
+}
+
+int main(int argc, char* argv[]) {
+    std::vector<std::string> args(argv, argv + argc);
+    std::string decimal = getCmdOption(argv, argv + argc, "--decimal");
+    std::string delimiter = getCmdOption(argv, argv + argc, "--delimiter");
+
+    if (delimiter.empty()) {
+        delimiter = " "; // default delimiter is space
+    }
+
+    if (!decimal.empty()) {
+        size_t pos = 0;
+        std::string token;
+        while ((pos = decimal.find(delimiter)) != std::string::npos) {
+            token = decimal.substr(0, pos);
+            std::cout << static_cast<char>(std::stoi(token));
+            decimal.erase(0, pos + delimiter.length());
+        }
+        std::cout << static_cast<char>(std::stoi(decimal));
+        std::cout << std::endl;
+    } else {
+        std::cout << "No decimal representation was given." << std::endl;
+    }
+
+    return 0;
+}
+```
+
+You can compile and run this program in the same way as before:
+
+```bash
+g++ -o decimal_to_string decimal_to_string.cpp
+./decimal_to_string --decimal "72,101,108,108,111" --delimiter ","
+```
+
+This will output the string representation of the decimal numbers, which in this case is "Hello".
